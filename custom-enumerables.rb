@@ -4,7 +4,7 @@ module Enumerable
 
   def my_each
     for key, value in self
-      yield key, value # Needs to yield to the block given to it
+      yield key, value
     end
     return self
   end
@@ -19,9 +19,7 @@ module Enumerable
     end
   end
 
-  # my_select (can use #my_each)
-  # NEED TO FIGURE OUT WHY THE AMPERSAND IS USED TO MAKE THE BLOCK A PROC BELOW
-  # THOUGHT WE COULD USE YIELD
+  # my_select
   
   def my_select(&block)
     array =[]
@@ -42,27 +40,103 @@ module Enumerable
       end
       return hash
     end
-
   end
-
-  # Need to look through each one in the set and select the ones that fit a criteria
-  # Need to pass a block to select that checks if true or false and builds and returns an 
-  # array with all of the true ones
 
   # my_all?
 
+  def my_all?(&block)
+    self.my_each do |value|
+      if block.call(value) == false
+        return false
+      end
+    end
+    return true
+  end
+
   # my_any?
+
+  def my_any?(&block)
+    self.my_each do |value|
+      if block.call(value)
+        return true
+      end
+    end
+    return false
+  end
 
   # my_none?
 
+  def my_none?(argv=nil, &block)
+    block = Proc.new { |item| item unless item.nil? || !item } unless block_given?
+    block = Proc.new { |item| item if argv === item} unless argv.nil?
+    self.my_each do |value|
+      if block.call(value)
+        return false
+      end
+    end
+    return true
+  end
+
   # my_count
+
+  def my_count(argv=nil, &block)
+    block = Proc.new { |item| item unless item.nil? || !item } unless block_given?
+    block = Proc.new { |item| item if argv === item} unless argv.nil?
+    count = 0
+    self.my_each do |item|
+      if block.call(item)
+        count += 1
+      end
+    end
+    count
+  end
 
   # my_map
 
+  def my_map(a_proc=nil)
+
+    map_array = []
+    if a_proc
+      for item in self
+        map_array.push(a_proc.call(item))
+      end
+      return map_array
+    end
+    for item in self
+      map_array.push(yield item)
+    end
+    return map_array
+
+  end
+
   # my_inject
 
+  def my_inject(accumulator=nil, &block)
+    
+    self.class == Range ? arr = self.to_a : arr = self
 
+    if block_given?
+      for item in arr
+        if accumulator.nil?
+          accumulator = self.first
+          next
+        end
+        accumulator = block.call(accumulator, item)
+      end
+    else
+      for item in arr
+        if accumulator.nil?
+          accumulator = self.first
+          next
+        end
+        accumulator = yield accumulator, item
+      end
+    end
+    accumulator
+  end
 
+end
 
-
+def multiply_els arr
+  arr.my_inject(&:*)
 end
